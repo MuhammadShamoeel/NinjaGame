@@ -10,7 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json" />
+    <link rel="manifest" href="/NinjaGame/manifest.json" />
     
     <!-- iOS Immersive Fullscreen Standalone App Configuration -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2475,7 +2475,7 @@
 
         // Fallback: Show install button if service worker registers (for localhost/dev)
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').then((reg) => {
+            navigator.serviceWorker.register('/NinjaGame/sw.js').then((reg) => {
                 console.log('[PWA] Service Worker registered:', reg.scope);
                 // On localhost/dev, show install button even without beforeinstallprompt
                 if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
