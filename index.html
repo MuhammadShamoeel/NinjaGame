@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#060a1d">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Shadow Ninja">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="display-mode" content="fullscreen">
+    <meta name="screen-orientation" content="landscape">
     <title>Midnight Shadow Autoplay Ninja</title>
     <!-- Tailwind CSS for high-end procedural styling -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json" />
-    
-    <!-- iOS Immersive Fullscreen Standalone App Configuration -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Shadow Ninja">
-    <meta name="apple-touch-fullscreen" content="yes">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/060a1d/00ffd5?text=Ninja">
 
     <style>
@@ -42,10 +42,6 @@
             left: 0;
             right: 0;
             bottom: 0;
-            padding: max(0px, env(safe-area-inset-top)) 
-                     max(0px, env(safe-area-inset-right)) 
-                     max(0px, env(safe-area-inset-bottom)) 
-                     max(0px, env(safe-area-inset-left));
         }
 
         .title-font {
@@ -160,9 +156,9 @@
                     </button>
                 </div>
 
-                <!-- PWA Auxiliary Options Section -->
+                <!-- PWA Install App Button -->
                 <div class="flex flex-wrap justify-center gap-2 mb-6">
-                    <button id="installPwaBtn" class="cyber-button hidden px-4 py-1.5 rounded-lg border border-cyan-400 bg-cyan-950/50 text-cyan-400 text-xs font-black tracking-wider shadow-[0_0_12px_rgba(0,255,213,0.2)]">
+                    <button id="installPwaBtn" class="cyber-button px-4 py-1.5 rounded-lg border border-cyan-400 bg-cyan-950/50 text-cyan-400 text-xs font-black tracking-wider shadow-[0_0_12px_rgba(0,255,213,0.2)]" style="display: none;">
                         📥 INSTALL APP
                     </button>
                 </div>
@@ -200,41 +196,104 @@
 
     <script>
         /* ------------------------------------------------------------------
-         * PWA INSTALLATION PROMPT HANDLER
+         * FULLSCREEN & ORIENTATION MANAGEMENT
+         * ------------------------------------------------------------------ */
+        function requestFullscreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => console.log('Fullscreen request failed:', err));
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.mozRequestFullScreen) {
+                elem.mozRequestFullScreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+        }
+
+        function lockOrientation() {
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(err => console.log('Orientation lock failed:', err));
+            }
+        }
+
+        // Request fullscreen on user interaction
+        function enableFullscreenMode() {
+            requestFullscreen();
+            lockOrientation();
+        }
+
+        // Trigger on first user interaction
+        document.addEventListener('click', function initFullscreen() {
+            enableFullscreenMode();
+            document.removeEventListener('click', initFullscreen);
+        }, { once: true });
+
+        document.addEventListener('touchstart', function initFullscreen() {
+            enableFullscreenMode();
+            document.removeEventListener('touchstart', initFullscreen);
+        }, { once: true });
+
+        /* ------------------------------------------------------------------
+         * PWA INSTALLATION PROMPT HANDLER (Updated)
          * ------------------------------------------------------------------ */
         let deferredPrompt = null;
 
+        // Listen for the beforeinstallprompt event
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            // Show the install button
+            console.log('beforeinstallprompt event fired');
+            e.preventDefault(); // Prevent the browser from showing its own prompt
+            deferredPrompt = e; // Store the event for later use
+            
+            // Show our custom install button
             const installBtn = document.getElementById('installPwaBtn');
             if (installBtn) {
-                installBtn.classList.remove('hidden');
+                installBtn.style.display = 'inline-block';
+                console.log('Install button shown');
             }
         });
 
+        // Handle install button click
         const installPwaBtn = document.getElementById('installPwaBtn');
         if (installPwaBtn) {
-            installPwaBtn.addEventListener('click', async () => {
-                if (!deferredPrompt) {
-                    return;
+            installPwaBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                console.log('Install button clicked');
+                
+                if (deferredPrompt) {
+                    // Show the browser's native install prompt
+                    deferredPrompt.prompt();
+                    
+                    // Wait for the user's response
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response: ${outcome}`);
+                    
+                    // Clear the stored event
+                    deferredPrompt = null;
+                    
+                    // Hide the install button
+                    installPwaBtn.style.display = 'none';
                 }
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response to the install prompt: ${outcome}`);
-                deferredPrompt = null;
-                installPwaBtn.classList.add('hidden');
             });
         }
 
-        // Hide install button when app is installed
+        // Listen for app installation
         window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
             const installBtn = document.getElementById('installPwaBtn');
             if (installBtn) {
-                installBtn.classList.add('hidden');
+                installBtn.style.display = 'none';
             }
-            console.log('PWA was installed');
+        });
+
+        // Hide install button on page load if app is already installed
+        window.addEventListener('load', () => {
+            if (window.navigator.standalone === true) {
+                const installBtn = document.getElementById('installPwaBtn');
+                if (installBtn) {
+                    installBtn.style.display = 'none';
+                }
+            }
         });
 
         const canvas = document.getElementById('gameCanvas');
@@ -268,7 +327,7 @@
                     if (!this.ctx) {
                         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                         this.musicMasterGain = this.ctx.createGain();
-                        this.musicMasterGain.gain.setValueAtTime(0.08, this.ctx.currentTime); // low bg volume
+                        this.musicMasterGain.gain.setValueAtTime(0.08, this.ctx.currentTime);
                         this.musicMasterGain.connect(this.ctx.destination);
                         this.startSequencer();
                     }
@@ -297,12 +356,11 @@
                 this.musicInterval = setInterval(() => {
                     if (gameState === STATE_GAMEOVER) return;
                     this.tickSequencer();
-                }, 160); // Driving tempo step
+                }, 160);
             }
 
             tickSequencer() {
                 const step = this.musicStep;
-                // Hans Zimmer's Arranged Motif (descending pentatonic structure)
                 const riff = [
                     'A', null, 'A', null, 'C', null, 'D', null,
                     'D', null, 'C', null, 'A', null, 'A', null,
@@ -311,9 +369,7 @@
                 ];
                 const currentNote = riff[step];
 
-                // Taiko bass kicks
                 if (step % 4 === 0) this.playHeavyDrum();
-                // Backbeat metal clangs
                 if (step % 8 === 4) this.playSnares();
 
                 if (currentNote) {
@@ -574,20 +630,17 @@
                 } catch(e) {}
             }
 
-            // Upgraded High Volume, Deep Echo tactical missile explosion node
             playMissileExplosion() {
                 try {
                     this.init();
                     if (!this.ctx) return;
                     if (!this.noiseBuffer) this.noiseBuffer = this.createNoiseBuffer();
 
-                    // High master volume saturation
                     const masterGain = this.ctx.createGain();
                     masterGain.gain.setValueAtTime(3.3, this.ctx.currentTime);
                     masterGain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 3.8);
                     masterGain.connect(this.ctx.destination);
 
-                    // Deep triangle rumble
                     const boomOsc = this.ctx.createOscillator();
                     const boomGain = this.ctx.createGain();
                     boomOsc.type = 'triangle';
@@ -602,7 +655,6 @@
                     boomOsc.start();
                     boomOsc.stop(this.ctx.currentTime + 1.25);
 
-                    // Lowpass filter trail
                     const noiseSource = this.ctx.createBufferSource();
                     noiseSource.buffer = this.noiseBuffer;
                     const noiseFilter = this.ctx.createBiquadFilter();
@@ -620,7 +672,6 @@
                     noiseSource.start();
                     noiseSource.stop(this.ctx.currentTime + 2.6);
 
-                    // Swept Sawtooth acoustic resonance tail
                     const echoOsc = this.ctx.createOscillator();
                     const echoGain = this.ctx.createGain();
                     echoOsc.type = 'sawtooth';
@@ -844,7 +895,7 @@
         let particles = [];
         let corpses = [];
         let jets = [];
-        let fireSpots = []; // Missiles firestorms persistent hazards array
+        let fireSpots = [];
 
         // Parallax asset arrays
         const stars = [];
