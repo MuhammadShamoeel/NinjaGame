@@ -2,7 +2,7 @@
   "name": "Midnight Shadow Autoplay Ninja",
   "short_name": "Shadow Ninja",
   "description": "An autonomous AI ninja platformer game with manual warrior mode",
-  "start_url": "./ka.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#03050d",
