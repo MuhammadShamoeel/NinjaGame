@@ -2467,57 +2467,61 @@
         const installPwaBtn = document.getElementById('installPwaBtn');
 
         window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('[PWA] Install prompt triggered');
             e.preventDefault();
             deferredPrompt = e;
             installPwaBtn.classList.remove('hidden');
-            console.log('Install prompt available');
         });
 
+        // Fallback: Show install button if service worker registers (for localhost/dev)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').then((reg) => {
+                console.log('[PWA] Service Worker registered:', reg.scope);
+                // On localhost/dev, show install button even without beforeinstallprompt
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    installPwaBtn.classList.remove('hidden');
+                }
+            }).catch((err) => {
+                console.warn('[PWA] Service Worker registration failed:', err);
+            });
+        }
+
         installPwaBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            try {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response to install prompt: ${outcome}`);
-                deferredPrompt = null;
-                installPwaBtn.classList.add('hidden');
-            } catch(e) {
-                console.error('Install error:', e);
+            if (deferredPrompt) {
+                try {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`[PWA] User response: ${outcome}`);
+                    deferredPrompt = null;
+                    installPwaBtn.classList.add('hidden');
+                } catch(e) {
+                    console.error('[PWA] Install error:', e);
+                }
+            } else {
+                alert('PWA install not available. Access via HTTP/HTTPS and ensure service worker is registered.');
             }
         });
 
-        // Check if already installed (works on iOS and Android PWA)
+        // Check if already installed
         const checkInstalled = () => {
             if (window.navigator.standalone === true) {
                 installPwaBtn.classList.add('hidden');
-                console.log('Already running as PWA');
+                console.log('[PWA] Running as standalone app');
             }
-            // On Android Chrome, also check display-mode
             if (window.matchMedia('(display-mode: standalone)').matches) {
                 installPwaBtn.classList.add('hidden');
-                console.log('PWA display mode detected');
+                console.log('[PWA] Display mode is standalone');
             }
         };
         checkInstalled();
         
-        // Listen for display-mode changes (Android)
+        // Listen for display-mode changes
         if (window.matchMedia) {
             window.matchMedia('(display-mode: standalone)').addListener((e) => {
                 if (e.matches) {
                     installPwaBtn.classList.add('hidden');
                 }
             });
-        }
-
-        // Register local service worker for offline operations (Ignored gracefully if sw.js is missing)
-        try {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./sw.js')
-                    .then((reg) => console.log('Service Worker Registered Successfully', reg.scope))
-                    .catch((err) => console.warn('Offline features require placing sw.js in root directory.', err));
-            }
-        } catch(e) {
-            console.warn("Service worker registration ignored:", e);
         }
 
         // Direct-boot sequence on window load
