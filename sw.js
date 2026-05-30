@@ -1,7 +1,7 @@
 const CACHE_NAME = 'shadow-ninja-v1';
 const ASSETS = [
   './',
-  './index.html',
+  '/NinjaGame/index.html',
   './manifest.json'
 ];
 
