@@ -1,8 +1,9 @@
 const CACHE_NAME = 'shadow-ninja-v1';
 const ASSETS = [
   './',
-  './ka.html',
-  './manifest.json'
+  './index.html',
+  './manifest.json',
+  './sw.js'
 ];
 
 self.addEventListener('install', (e) => {
