@@ -6,6 +6,8 @@
 
 # 🥷 Midnight Shadow: Autonomous AI Ninja Platformer
 
+https://muhammadshamoeel.github.io/NinjaGame/
+
 **Midnight Shadow** is a fast-paced, stylized 2D action platformer that blends classic hack-and-slash mechanics with adaptive gameplay modes. The game features a dual-experience system allowing players to either take absolute manual control of a lethal shadow warrior or sit back and observe an autonomous artificial intelligence clear rooms with perfect mechanical timing.
 
 ---
